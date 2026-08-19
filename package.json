@@ -1,0 +1,21 @@
+{
+  "name": "serverless-inventory-prototype",
+  "version": "1.0.0",
+  "description": "Minimal Node.js serverless function prototype for Northstar Retail inventory lookup on Vercel.",
+  "main": "api/inventory.js",
+  "type": "commonjs",
+  "scripts": {
+    "dev": "node dev.js",
+    "start": "node dev.js"
+  },
+  "keywords": [
+    "serverless",
+    "vercel",
+    "node",
+    "api",
+    "inventory",
+    "northstar"
+  ],
+  "author": "",
+  "license": "ISC"
+}

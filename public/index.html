@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Northstar Retail — Serverless Inventory API Tester</title>
+  <style>
+    :root {
+      --bg-color: #0f172a;
+      --card-bg: #1e293b;
+      --border-color: #334155;
+      --accent-color: #38bdf8;
+      --accent-hover: #0284c7;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --success-bg: #14532d;
+      --success-text: #4ade80;
+      --error-bg: #7f1d1d;
+      --error-text: #f87171;
+      --warn-bg: #78350f;
+      --warn-text: #fbbf24;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      display: flex;
+      justify-content: center;
+      padding: 2rem 1rem;
+      min-height: 100vh;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 800px;
+    }
+
+    header {
+      margin-bottom: 2rem;
+      text-align: center;
+    }
+
+    h1 {
+      font-size: 2rem;
+      color: var(--text-main);
+      margin-bottom: 0.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+    }
+
+    .badge {
+      font-size: 0.75rem;
+      background: var(--accent-color);
+      color: #0f172a;
+      padding: 0.25rem 0.6rem;
+      border-radius: 999px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    p.subtitle {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+    }
+
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 1.75rem;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+    }
+
+    .form-group {
+      display: flex;
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+    }
+
+    input[type="text"] {
+      flex: 1;
+      padding: 0.75rem 1rem;
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
+      background: #0f172a;
+      color: var(--text-main);
+      font-size: 1rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    input[type="text"]:focus {
+      border-color: var(--accent-color);
+    }
+
+    button {
+      background: var(--accent-color);
+      color: #0f172a;
+      border: none;
+      border-radius: 8px;
+      padding: 0.75rem 1.5rem;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    button:hover {
+      background: var(--accent-hover);
+    }
+
+    .quick-test {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      align-items: center;
+    }
+
+    .quick-test span {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    .chip {
+      background: #0f172a;
+      border: 1px solid var(--border-color);
+      color: var(--accent-color);
+      padding: 0.35rem 0.75rem;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      cursor: pointer;
+      font-family: monospace;
+      transition: all 0.2s;
+    }
+
+    .chip:hover {
+      border-color: var(--accent-color);
+      background: #1e293b;
+    }
+
+    .response-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+
+    .status-pill {
+      font-weight: 700;
+      font-size: 0.85rem;
+      padding: 0.25rem 0.75rem;
+      border-radius: 6px;
+      display: inline-block;
+    }
+
+    .status-200 { background: var(--success-bg); color: var(--success-text); }
+    .status-400 { background: var(--warn-bg); color: var(--warn-text); }
+    .status-404 { background: var(--error-bg); color: var(--error-text); }
+
+    pre {
+      background: #0f172a;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 1.25rem;
+      color: #38bdf8;
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 0.95rem;
+      overflow-x: auto;
+      white-space: pre-wrap;
+    }
+
+    .url-bar {
+      font-family: monospace;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      background: #0f172a;
+      padding: 0.5rem 0.75rem;
+      border-radius: 6px;
+      margin-bottom: 1rem;
+      word-break: break-all;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Northstar Retail <span class="badge">Serverless API</span></h1>
+      <p class="subtitle">Interactive tester for Vercel Serverless Function: <code>/api/inventory</code></p>
+    </header>
+
+    <main>
+      <section class="card">
+        <h2 style="font-size: 1.1rem; margin-bottom: 1rem;">Query Inventory API</h2>
+        
+        <div class="form-group">
+          <input type="text" id="productIdInput" placeholder="Enter Product ID (e.g. PROD-101)" value="PROD-101" />
+          <button id="sendBtn">Send Request</button>
+        </div>
+
+        <div class="quick-test">
+          <span>Quick Preset Tests:</span>
+          <button class="chip" onclick="setAndSend('PROD-101')">PROD-101 (In Stock - 200)</button>
+          <button class="chip" onclick="setAndSend('PROD-103')">PROD-103 (Out of Stock - 200)</button>
+          <button class="chip" onclick="setAndSend('PROD-999')">PROD-999 (Invalid - 404)</button>
+          <button class="chip" onclick="setAndSend('')">Empty (Missing Param - 400)</button>
+        </div>
+      </section>
+
+      <section class="card" id="responseCard" style="display: none;">
+        <div class="response-header">
+          <h2 style="font-size: 1.1rem;">API Response</h2>
+          <span id="statusBadge" class="status-pill"></span>
+        </div>
+
+        <div class="url-bar" id="requestUrl">GET /api/inventory</div>
+
+        <pre><code id="jsonOutput"></code></pre>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    const productIdInput = document.getElementById('productIdInput');
+    const sendBtn = document.getElementById('sendBtn');
+    const responseCard = document.getElementById('responseCard');
+    const statusBadge = document.getElementById('statusBadge');
+    const requestUrl = document.getElementById('requestUrl');
+    const jsonOutput = document.getElementById('jsonOutput');
+
+    async function fetchInventory(productId) {
+      const queryStr = productId ? `?productId=${encodeURIComponent(productId)}` : '';
+      const url = `/api/inventory${queryStr}`;
+      
+      requestUrl.textContent = `GET ${window.location.origin}${url}`;
+      responseCard.style.display = 'block';
+      jsonOutput.textContent = 'Fetching...';
+
+      try {
+        const response = await fetch(url);
+        const data = await response.json();
+
+        statusBadge.textContent = `${response.status} ${response.statusText || ''}`;
+        statusBadge.className = `status-pill status-${response.status}`;
+
+        jsonOutput.textContent = JSON.stringify(data, null, 2);
+      } catch (err) {
+        statusBadge.textContent = 'Error';
+        statusBadge.className = 'status-pill status-404';
+        jsonOutput.textContent = JSON.stringify({ error: err.message }, null, 2);
+      }
+    }
+
+    sendBtn.addEventListener('click', () => {
+      fetchInventory(productIdInput.value);
+    });
+
+    productIdInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') fetchInventory(productIdInput.value);
+    });
+
+    function setAndSend(id) {
+      productIdInput.value = id;
+      fetchInventory(id);
+    }
+  </script>
+</body>
+</html>
