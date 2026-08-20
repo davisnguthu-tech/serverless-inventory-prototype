@@ -10,7 +10,7 @@ A **Serverless Function** (often called *Function-as-a-Service* or *FaaS*) is a 
 
 ### Key Concepts:
 - **On-Demand Execution**: Unlike traditional Node.js/Express servers that run `server.listen(3000)` continuously 24/7, a serverless function spins up when a request arrives, handles the request, sends a response, and immediately shuts down or goes idle.
-- **Automatic Scaling**: If 1 request arrives, Vercel executes 1 instance of your function. If 10,000 requests arrive at once, Vercel automatically scales out 10,000 parallel instances instantly.
+- **Automatic Scaling**: If 1 request arrives, Vercel executes 1 instance of your function. Serverless platforms can automatically scale function execution to handle increased traffic, subject to the platform's limits, quotas and concurrency behaviour.
 - **Zero Server Management**: You don't need to configure Nginx, SSL certificates, operating system updates, or process managers like PM2.
 - **Statelessness**: Serverless functions are ephemeral. In-memory data does not persist permanently between requests across different function instances.
 
