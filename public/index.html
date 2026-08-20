@@ -4,8 +4,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Northstar Retail - Inventory Checker</title>
+    <title>Northstar Retail - Serverless Inventory Prototype</title>
     <style>
+        :root {
+            --bg-main: #0f172a;
+            --card-bg: #1e293b;
+            --border-color: #334155;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent-blue: #38bdf8;
+            --accent-green: #4ade80;
+            --accent-red: #f87171;
+            --accent-yellow: #fbbf24;
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -13,172 +25,436 @@
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            background: #0f172a;
-            color: #e2e8f0;
-            padding: 2rem;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: var(--bg-main);
+            color: var(--text-main);
+            line-height: 1.6;
+            padding: 2rem 1rem;
         }
 
         .container {
-            max-width: 700px;
+            max-width: 800px;
             margin: 0 auto;
         }
 
+        header {
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+
         h1 {
-            color: #60a5fa;
-            margin-bottom: 0.5rem;
+            color: var(--accent-blue);
+            font-size: 2.2rem;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+        }
+
+        .badge {
+            background: #0284c7;
+            color: #ffffff;
+            font-size: 0.75rem;
+            padding: 0.25rem 0.6rem;
+            border-radius: 999px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-weight: 700;
         }
 
         .subtitle {
-            color: #94a3b8;
-            margin-bottom: 2rem;
+            color: var(--text-muted);
+            font-size: 1rem;
+            margin-top: 0.5rem;
         }
 
         .card {
-            background: #1e293b;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
             border-radius: 12px;
-            padding: 1.5rem;
-            margin-bottom: 1rem;
-            border: 1px solid #334155;
+            padding: 1.75rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
         }
 
-        input {
-            width: 100%;
-            padding: 0.75rem;
+        .card-title {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--text-main);
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        /* Architecture Section */
+        .arch-steps {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .arch-step {
             background: #0f172a;
-            border: 1px solid #334155;
+            border: 1px solid var(--border-color);
             border-radius: 8px;
-            color: #e2e8f0;
-            font-size: 1rem;
-            margin-bottom: 1rem;
+            padding: 1rem;
         }
 
-        button {
-            background: #3b82f6;
-            color: white;
-            border: none;
-            padding: 0.75rem 1.5rem;
+        .arch-step-num {
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: var(--accent-blue);
+            text-transform: uppercase;
+        }
+
+        .arch-step-title {
+            font-weight: 600;
+            margin: 0.25rem 0;
+            color: var(--text-main);
+        }
+
+        .arch-step-desc {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .endpoint-pill-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        .endpoint-pill {
+            background: #0f172a;
+            border: 1px dashed var(--border-color);
+            border-radius: 6px;
+            padding: 0.6rem 0.8rem;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.9rem;
+            color: var(--accent-blue);
+        }
+
+        .endpoint-pill span.method {
+            color: var(--accent-green);
+            font-weight: 700;
+            margin-right: 0.5rem;
+        }
+
+        /* Form Controls */
+        .form-group {
+            display: flex;
+            gap: 0.75rem;
+            margin-bottom: 1.25rem;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            padding: 0.75rem 1rem;
             border-radius: 8px;
+            border: 1px solid var(--border-color);
+            background: #0f172a;
+            color: var(--text-main);
+            font-size: 1rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        input[type="text"]:focus {
+            border-color: var(--accent-blue);
+        }
+
+        button.btn-primary {
+            background: #0284c7;
+            color: #ffffff;
+            border: none;
+            border-radius: 8px;
+            padding: 0.75rem 1.5rem;
+            font-size: 1rem;
             font-weight: 600;
             cursor: pointer;
-            width: 100%;
+            transition: background 0.2s;
         }
 
-        button:hover {
-            background: #2563eb;
+        button.btn-primary:hover {
+            background: #0369a1;
         }
 
-        .preset {
+        .preset-group {
             display: flex;
-            gap: 0.5rem;
-            margin-bottom: 1rem;
             flex-wrap: wrap;
+            gap: 0.5rem;
+            align-items: center;
         }
 
-        .preset button {
-            flex: 1;
-            background: #334155;
+        .preset-label {
             font-size: 0.85rem;
-            padding: 0.5rem;
+            color: var(--text-muted);
+            width: 100%;
+            margin-bottom: 0.25rem;
         }
 
-        #result {
-            display: none;
+        .chip {
+            background: #0f172a;
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            padding: 0.4rem 0.8rem;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            font-family: inherit;
+            transition: all 0.2s;
         }
 
-        .product-card {
+        .chip:hover {
+            border-color: var(--accent-blue);
             background: #1e293b;
-            border-left: 4px solid #3b82f6;
-            padding: 1.5rem;
+            color: var(--accent-blue);
+        }
+
+        .chip-health {
+            border-color: #0284c7;
+            color: var(--accent-blue);
+        }
+
+        /* Response Section */
+        .response-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.75rem;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .status-pill {
+            font-weight: 700;
+            font-size: 0.85rem;
+            padding: 0.3rem 0.75rem;
+            border-radius: 6px;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .status-200 { background: #14532d; color: var(--accent-green); border: 1px solid #16a34a; }
+        .status-400 { background: #713f12; color: var(--accent-yellow); border: 1px solid #ca8a04; }
+        .status-404 { background: #7f1d1d; color: var(--accent-red); border: 1px solid #dc2626; }
+
+        .request-display {
+            background: #0f172a;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 0.6rem 0.8rem;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: 1rem;
+            word-break: break-all;
+        }
+
+        .request-display span.method {
+            color: var(--accent-green);
+            font-weight: 700;
+        }
+
+        pre {
+            background: #0f172a;
+            border: 1px solid var(--border-color);
             border-radius: 8px;
+            padding: 1.25rem;
+            color: var(--accent-blue);
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.95rem;
+            overflow-x: auto;
+            white-space: pre-wrap;
         }
 
-        .product-card.out {
-            border-left-color: #ef4444;
-        }
-
-        .product-name {
-            font-size: 1.25rem;
-            font-weight: 700;
-            color: #60a5fa;
-        }
-
-        .stock {
-            font-size: 2rem;
-            font-weight: 700;
-            margin: 0.5rem 0;
-        }
-
-        .in {
-            color: #22c55e;
-        }
-
-        .out {
-            color: #ef4444;
-        }
-
-        .error {
-            background: #7f1d1d;
-            border-left: 4px solid #ef4444;
+        /* Visual Card for Products */
+        .product-summary {
+            margin-top: 1rem;
             padding: 1rem;
             border-radius: 8px;
+            background: #0f172a;
+            border-left: 4px solid var(--accent-blue);
         }
+
+        .product-summary.out-of-stock {
+            border-left-color: var(--accent-red);
+        }
+
+        .product-summary-name {
+            font-weight: 700;
+            font-size: 1.1rem;
+            color: var(--text-main);
+        }
+
+        .product-summary-status {
+            font-size: 0.9rem;
+            margin-top: 0.25rem;
+        }
+
+        .in-stock-text { color: var(--accent-green); font-weight: 600; }
+        .out-stock-text { color: var(--accent-red); font-weight: 600; }
     </style>
 </head>
 
 <body>
     <div class="container">
-        <h1>Northstar Retail</h1>
-        <p class="subtitle">Serverless Inventory Prototype</p>
+        <header>
+            <h1>Northstar Retail <span class="badge">Serverless API</span></h1>
+            <p class="subtitle">Real-time Serverless Function Tester & Architecture Demo</p>
+        </header>
 
-        <div class="card">
-            <h2>Query Inventory API</h2>
-            <input type="text" id="productId" placeholder="Enter Product ID e.g. PROD-101">
-            <button onclick="checkInventory()">Send Request</button>
-            <div class="preset">
-                <button onclick="quickTest('PROD-101')">PROD-101 (In Stock)</button>
-                <button onclick="quickTest('PROD-103')">PROD-103 (Out of Stock)</button>
-                <button onclick="quickTest('PROD-999')">PROD-999 (404)</button>
-            </div>
-        </div>
+        <main>
+            <!-- How It Works Architecture Section -->
+            <section class="card">
+                <div class="card-title">💡 How It Works</div>
+                <p style="font-size: 0.95rem; color: var(--text-muted);">
+                    This web interface communicates directly with stateless Node.js serverless functions running on-demand.
+                </p>
 
-        <div id="result"></div>
+                <div class="arch-steps">
+                    <div class="arch-step">
+                        <div class="arch-step-num">Step 1</div>
+                        <div class="arch-step-title">HTTP Request</div>
+                        <div class="arch-step-desc">Client triggers a GET request via fetch() to the serverless route.</div>
+                    </div>
+                    <div class="arch-step">
+                        <div class="arch-step-num">Step 2</div>
+                        <div class="arch-step-title">Function Execution</div>
+                        <div class="arch-step-desc">Vercel spins up the endpoint handler on demand to process logic.</div>
+                    </div>
+                    <div class="arch-step">
+                        <div class="arch-step-num">Step 3</div>
+                        <div class="arch-step-title">JSON Response</div>
+                        <div class="arch-step-desc">Returns structured JSON payload and HTTP status code before going idle.</div>
+                    </div>
+                </div>
+
+                <div class="endpoint-pill-list">
+                    <div class="endpoint-pill"><span class="method">GET</span> /api/inventory?productId={PRODUCT_ID}</div>
+                    <div class="endpoint-pill"><span class="method">GET</span> /api/health</div>
+                </div>
+            </section>
+
+            <!-- API Query Section -->
+            <section class="card">
+                <div class="card-title">🔍 Query API Endpoint</div>
+
+                <div class="form-group">
+                    <input type="text" id="productIdInput" placeholder="Enter Product ID (e.g. PROD-101)" value="PROD-101" />
+                    <button class="btn-primary" id="sendBtn" onclick="testInventoryFromInput()">Send Request</button>
+                </div>
+
+                <div class="preset-group">
+                    <div class="preset-label">Quick Test Presets:</div>
+                    <button class="chip" onclick="runPreset('PROD-101')">PROD-101 (In Stock - 200)</button>
+                    <button class="chip" onclick="runPreset('PROD-103')">PROD-103 (Out of Stock - 200)</button>
+                    <button class="chip" onclick="runPreset('PROD-999')">PROD-999 (Not Found - 404)</button>
+                    <button class="chip" onclick="runPreset('')">Missing Param (400)</button>
+                    <button class="chip chip-health" onclick="testHealthCheck()">Check Health (/api/health)</button>
+                </div>
+            </section>
+
+            <!-- Response Display Section -->
+            <section class="card" id="responseCard" style="display: none;">
+                <div class="card-title">📡 Live Response Display</div>
+
+                <div class="request-display" id="requestDisplay">
+                    <span class="method">GET</span> <span id="requestUrlText">/api/inventory</span>
+                </div>
+
+                <div class="response-meta">
+                    <span style="font-size: 0.9rem; color: var(--text-muted);">HTTP Status Code:</span>
+                    <span id="statusBadge" class="status-pill"></span>
+                </div>
+
+                <pre><code id="jsonOutput"></code></pre>
+
+                <div id="productSummaryContainer"></div>
+            </section>
+        </main>
     </div>
 
     <script>
-        async function checkInventory(id = null) {
-            const productId = id || document.getElementById('productId').value;
-            const resultDiv = document.getElementById('result');
-            resultDiv.style.display = 'block';
+        const productIdInput = document.getElementById('productIdInput');
+        const responseCard = document.getElementById('responseCard');
+        const requestUrlText = document.getElementById('requestUrlText');
+        const statusBadge = document.getElementById('statusBadge');
+        const jsonOutput = document.getElementById('jsonOutput');
+        const productSummaryContainer = document.getElementById('productSummaryContainer');
+
+        async function executeApiCall(endpointPath) {
+            const fullUrl = `${window.location.origin}${endpointPath}`;
+            
+            responseCard.style.display = 'block';
+            requestUrlText.textContent = fullUrl;
+            jsonOutput.textContent = 'Loading...';
+            statusBadge.textContent = 'PENDING...';
+            statusBadge.className = 'status-pill';
+            productSummaryContainer.innerHTML = '';
 
             try {
-                const res = await fetch(`/api/inventory?productId=${productId}`);
-                const data = await res.json();
+                const response = await fetch(endpointPath);
+                const data = await response.json();
 
-                if (!res.ok) {
-                    resultDiv.innerHTML = `<div class="error"><b>Error ${res.status}</b><p>${data.error}</p></div>`;
-                    return;
+                statusBadge.textContent = `${response.status} ${response.statusText || getStatusText(response.status)}`;
+                statusBadge.className = `status-pill status-${response.status}`;
+
+                jsonOutput.textContent = JSON.stringify(data, null, 2);
+
+                if (response.status === 200 && data.productId) {
+                    const isAvailable = data.inStock;
+                    productSummaryContainer.innerHTML = `
+                        <div class="product-summary ${!isAvailable ? 'out-of-stock' : ''}">
+                            <div class="product-summary-name">${data.productName} (${data.productId})</div>
+                            <div class="product-summary-status">
+                                ${isAvailable 
+                                    ? `<span class="in-stock-text">✅ In Stock (${data.stock} units available)</span>` 
+                                    : `<span class="out-stock-text">❌ Out of Stock (${data.stock} units)</span>`}
+                            </div>
+                        </div>
+                    `;
                 }
-
-                const statusClass = data.inStock ? 'in' : 'out';
-                const statusText = data.inStock ? '✅ In Stock' : '❌ Out of Stock';
-
-                resultDiv.innerHTML = `
-                    <div class="product-card ${!data.inStock ? 'out' : ''}">
-                        <div class="product-name">${data.productName}</div>
-                        <div>Product ID: ${data.productId}</div>
-                        <div class="stock ${statusClass}">${data.stock} units</div>
-                        <div>${statusText}</div>
-                    </div>
-                `;
-            } catch (e) {
-                resultDiv.innerHTML = `<div class="error"><b>Network Error</b></div>`;
+            } catch (err) {
+                statusBadge.textContent = 'NETWORK ERROR';
+                statusBadge.className = 'status-pill status-404';
+                jsonOutput.textContent = JSON.stringify({ error: err.message }, null, 2);
             }
         }
-        function quickTest(id) {
-            document.getElementById('productId').value = id;
-            checkInventory(id);
+
+        function getStatusText(code) {
+            switch(code) {
+                case 200: return 'OK';
+                case 400: return 'Bad Request';
+                case 404: return 'Not Found';
+                default: return '';
+            }
         }
+
+        function testInventoryFromInput() {
+            const rawId = productIdInput.value;
+            const queryParam = rawId !== '' ? `?productId=${encodeURIComponent(rawId)}` : '';
+            executeApiCall(`/api/inventory${queryParam}`);
+        }
+
+        function runPreset(id) {
+            productIdInput.value = id;
+            const queryParam = id !== '' ? `?productId=${encodeURIComponent(id)}` : '';
+            executeApiCall(`/api/inventory${queryParam}`);
+        }
+
+        function testHealthCheck() {
+            executeApiCall('/api/health');
+        }
+
+        productIdInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') testInventoryFromInput();
+        });
     </script>
 </body>
 

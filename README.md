@@ -1,166 +1,152 @@
-# 🚀 Northstar Retail — Serverless Inventory Function Prototype
+# 🚀 Northstar Retail — Serverless Inventory API Prototype
 
-A minimal, beginner-readable Node.js Serverless Function project created as an independent learning exercise and ready for deployment on **Vercel**.
+A minimal, beginner-readable Node.js Serverless Function API built as an independent learning exercise and configured for seamless deployment on **Vercel**.
+
+---
+
+## 🌐 Live Deployment & Endpoints
+
+- **Live Web Interface (Vercel)**: `https://serverless-inventory-prototype.vercel.app`
+- **Live Inventory API Endpoint**: `https://serverless-inventory-prototype.vercel.app/api/inventory?productId=PROD-101`
+- **Live Health Check Endpoint**: `https://serverless-inventory-prototype.vercel.app/api/health`
 
 ---
 
 ## 📚 1. What is a Serverless Function?
 
-A **Serverless Function** (often called *Function-as-a-Service* or *FaaS*) is a execution model where code runs on-demand in response to events or HTTP requests, without requiring you to manage, provision, or maintain a persistent server.
+A **Serverless Function** (often called *Function-as-a-Service* or *FaaS*) is an execution model where code runs on-demand in response to events or HTTP requests, without requiring developer management or continuous provisioning of a persistent server.
 
 ### Key Concepts:
-- **On-Demand Execution**: Unlike traditional Node.js/Express servers that run `server.listen(3000)` continuously 24/7, a serverless function spins up when a request arrives, handles the request, sends a response, and immediately shuts down or goes idle.
-- **Automatic Scaling**: If 1 request arrives, Vercel executes 1 instance of your function. Serverless platforms can automatically scale function execution to handle increased traffic, subject to the platform's limits, quotas and concurrency behaviour.
-- **Zero Server Management**: You don't need to configure Nginx, SSL certificates, operating system updates, or process managers like PM2.
-- **Statelessness**: Serverless functions are ephemeral. In-memory data does not persist permanently between requests across different function instances.
+- **On-Demand Execution**: Unlike traditional Node.js servers (such as Express apps running `server.listen(3000)` 24/7), a serverless function provisions on-demand when a request arrives, handles the request, sends an HTTP response, and goes idle or shuts down.
+- **Serverless Scaling Nuance**: Serverless platforms automatically scale execution to handle incoming traffic bursts. However, **10,000 requests do NOT automatically equal 10,000 separate function container instances**. Cloud providers (like Vercel and AWS Lambda) reuse "warm" function instances across sequential requests and enforce platform concurrency limits and quotas.
+- **Zero Server Infrastructure Management**: Operating system patches, SSL provisioning, process managers (e.g., PM2), and reverse proxies (e.g., Nginx) are managed automatically by the serverless platform.
+- **Statelessness**: Serverless execution environments are ephemeral. Memory state is not guaranteed to persist across different invocations or separate instances.
 
 ---
 
-## 🛠️ 2. How This Prototype Works
+## 🏗️ 2. Architecture & How It Works
 
-This project models an inventory lookup system for **Northstar Retail**:
+```
+                               ┌─────────────────────────┐
+                               │  Web Browser / Client   │
+                               └────────────┬────────────┘
+                                            │
+                               HTTP GET /api/inventory?productId=PROD-101
+                               HTTP GET /api/health
+                                            │
+             ┌──────────────────────────────┴──────────────────────────────┐
+             │                                                             │
+   [Local Development Mode]                                      [Production Mode]
+       node dev.js (Port 3000)                                Vercel FaaS Edge Network
+             │                                                             │
+  ┌──────────┴──────────┐                                       ┌──────────┴──────────┐
+  │ Routes HTTP calls & │                                       │ Automatically maps  │
+  │ serves static UI    │                                       │ /api/*.js routes    │
+  └──────────┬──────────┘                                       └──────────┬──────────┘
+             │                                                             │
+             └──────────────────────────────┬──────────────────────────────┘
+                                            │
+                      ┌─────────────────────┴─────────────────────┐
+                      │                                           │
+             api/inventory.js                              api/health.js
+                      │                                           │
+          Validates query parameter                     Returns service status &
+          & queries MOCK_INVENTORY                      ISO 8601 timestamp
+```
 
-1. **Routing Convention**: Vercel maps any file in the `/api` directory to an HTTP endpoint. 
-   - `api/inventory.js` -> Hosted at `/api/inventory`
-2. **Function Handler**: The function exports a default handler function `module.exports = function handler(req, res)`.
-3. **Mock Data**: Uses an in-memory inventory dataset (`MOCK_INVENTORY`) containing product names, stock quantities, and availability states.
-4. **Validation & HTTP Status Codes**:
-   - **`HTTP 200 OK`**: Product found. Returns `productId`, `productName`, `stock`, and boolean `inStock`.
-   - **`HTTP 400 Bad Request`**: `productId` parameter is missing from the query string.
-   - **`HTTP 404 Not Found`**: `productId` does not exist in the inventory catalog.
+### Serverless Functions vs Local Helper (`dev.js`):
+- **`api/inventory.js` & `api/health.js`**: These are the actual **Vercel Serverless Functions**. When deployed to Vercel, Vercel automatically exposes files inside the `/api` directory as individual serverless endpoints (`/api/inventory` and `/api/health`).
+- **`dev.js`**: This file is **only a local development/testing helper script**. It uses Node.js's native `http` module to serve `public/index.html` and route `/api/*` calls locally during development so you do not need to install global CLI tools.
 
 ---
 
-## 💻 3. How to Run It Locally
+## 🛠️ 3. How to Run It Locally
 
-You can run and test this project locally in two ways:
-
-### Option A: Using the Built-in Zero-Dependency Local Server (Recommended for instant testing)
-
-No external CLI or dependencies required!
+### Using the Zero-Dependency Local Development Server
 
 ```bash
 # Navigate to project directory
 cd serverless-inventory-prototype
 
-# Start local server
+# Start local dev server
 npm run dev
 ```
 
-Open your browser at `http://localhost:3000` to view the interactive test interface.
-
-### Option B: Using Vercel CLI (Official Vercel Local Environment)
-
-If you have the Vercel CLI installed globally (`npm i -g vercel`):
-
-```bash
-npx vercel dev
-```
+Open your browser at `http://localhost:3000` to interact with the web dashboard.
 
 ---
 
-## 🧪 4. How to Test the Endpoint
+## 🧪 4. How to Test the Endpoints
 
-### Method 1: Using your Browser
+### 1. Inventory Endpoint (`GET /api/inventory`)
 
-Open the following URLs directly in your web browser:
+| Test Scenario | Query Parameter | Expected HTTP Status | Expected Behavior |
+| :--- | :--- | :--- | :--- |
+| **In-Stock Product** | `?productId=PROD-101` | `HTTP 200 OK` | Returns product details with `stock: 45` and `inStock: true`. |
+| **Out-of-Stock Product** | `?productId=PROD-103` | `HTTP 200 OK` | Returns product details with `stock: 0` and `inStock: false`. |
+| **Invalid Product** | `?productId=PROD-999` | `HTTP 404 Not Found` | Returns error message & list of available IDs. |
+| **Missing Parameter** | *(no parameter)* | `HTTP 400 Bad Request` | Returns error message indicating `productId` is required. |
 
-1. **Valid Product Lookup (`HTTP 200`)**:
-   `http://localhost:3000/api/inventory?productId=PROD-101`
-   
-   **Response (`HTTP 200 OK`)**:
-   ```json
-   {
-     "productId": "PROD-101",
-     "productName": "Northstar Wireless Ergonomic Mouse",
-     "stock": 45,
-     "inStock": true
-   }
-   ```
-
-2. **Out of Stock Product (`HTTP 200`)**:
-   `http://localhost:3000/api/inventory?productId=PROD-103`
-   
-   **Response (`HTTP 200 OK`)**:
-   ```json
-   {
-     "productId": "PROD-103",
-     "productName": "Northstar 27-inch 4K USB-C Monitor",
-     "stock": 0,
-     "inStock": false
-   }
-   ```
-
-3. **Invalid Product Lookup (`HTTP 404`)**:
-   `http://localhost:3000/api/inventory?productId=PROD-999`
-   
-   **Response (`HTTP 404 Not Found`)**:
-   ```json
-   {
-     "error": "Not Found",
-     "message": "Product with ID 'PROD-999' does not exist in inventory.",
-     "availableProductIds": ["PROD-101", "PROD-102", "PROD-103", "PROD-104", "PROD-105"]
-   }
-   ```
-
-4. **Missing Parameter (`HTTP 400`)**:
-   `http://localhost:3000/api/inventory`
-   
-   **Response (`HTTP 400 Bad Request`)**:
-   ```json
-   {
-     "error": "Bad Request",
-     "message": "Missing required query parameter: 'productId'",
-     "exampleUsage": "/api/inventory?productId=PROD-101"
-   }
-   ```
-
-### Method 2: Using `curl` (Terminal)
-
+#### Example `curl` Commands:
 ```bash
+# Valid product lookup
 curl -i "http://localhost:3000/api/inventory?productId=PROD-101"
+
+# Out-of-stock product lookup
+curl -i "http://localhost:3000/api/inventory?productId=PROD-103"
+
+# Non-existent product lookup
 curl -i "http://localhost:3000/api/inventory?productId=PROD-999"
+
+# Missing parameter lookup
 curl -i "http://localhost:3000/api/inventory"
 ```
 
----
+### 2. Health Check Endpoint (`GET /api/health`)
 
-## 🌐 5. How to Deploy to Vercel
+```bash
+curl -i "http://localhost:3000/api/health"
+```
 
-Deploying this serverless function to Vercel is fast and free.
-
-### Approach 1: Deploy via Vercel CLI
-
-1. Open your terminal in `serverless-inventory-prototype`.
-2. Run:
-   ```bash
-   npx vercel
-   ```
-3. Follow the prompts:
-   - Set up and deploy? **Yes**
-   - Which scope? Select your personal scope.
-   - Link to existing project? **No**
-   - Project name? Press Enter or type `northstar-inventory-api`
-   - Directory located at? `./`
-4. Vercel will output a live production URL (e.g. `https://northstar-inventory-api.vercel.app`).
-5. Your endpoint will instantly be live at `https://your-app.vercel.app/api/inventory?productId=PROD-101`!
-
-### Approach 2: Deploy via GitHub & Vercel Dashboard
-
-1. Push this folder to a GitHub repository.
-2. Go to [vercel.com](https://vercel.com) and click **Add New > Project**.
-3. Import your GitHub repository.
-4. Keep the default settings and click **Deploy**.
-5. Vercel will automatically build the static assets in `/public` and deploy `/api/inventory.js` as a serverless function!
+**Response (`HTTP 200 OK`)**:
+```json
+{
+  "status": "ok",
+  "service": "northstar-serverless-inventory",
+  "timestamp": "2026-08-20T13:00:00.000Z"
+}
+```
 
 ---
 
-## 📁 File Breakdown & Architecture
+## 🔒 5. Prototype Limitations
 
-| File | Purpose | Why It Is Needed |
+This project is a lightweight learning prototype and has intentional limitations:
+1. **Mock Inventory Data**: Uses an in-memory JavaScript object (`MOCK_INVENTORY`) inside `api/inventory.js`. Data is intentionally hardcoded for educational purposes without database connectivity.
+2. **No Persistent State**: Any changes to state in memory are ephemeral and reset when function containers recycle.
+3. **No Authentication or Authorization**: Endpoints are publicly accessible without API keys or JWT tokens.
+4. **No Rate Limiting**: Does not throttle high-frequency client requests.
+
+---
+
+## 🔮 6. Future Improvements
+
+To elevate this prototype to a production-ready microservice, future iterations could implement:
+- **Managed Database Integration**: Connect to a serverless database (e.g., PostgreSQL via Supabase/Neon, or Redis via Upstash) for dynamic stock updates.
+- **Authentication & Security**: Add API key validation or OAuth2/JWT middleware.
+- **Rate Limiting**: Protect endpoints against abuse using Redis-backed rate limiting.
+- **Observability**: Implement structured logging, distributed tracing (OpenTelemetry), and health metrics dashboard.
+- **Automated CI/CD**: Set up automated unit/integration testing on GitHub Pull Requests before deploying to Vercel.
+
+---
+
+## 📁 File Breakdown
+
+| File | Description | Purpose |
 | :--- | :--- | :--- |
-| `api/inventory.js` | **Serverless Function Handler** | The core logic. Vercel automatically exposes files in `api/` as serverless HTTP endpoints. Handles parameter parsing, validation, HTTP status code assignment, and JSON formatting. |
-| `public/index.html` | **Interactive Test UI** | A clean visual dashboard to test all API responses directly in your browser. |
-| `dev.js` | **Local Development Runner** | Simulates Vercel's execution environment locally so you can run `npm run dev` without needing CLI setup. |
-| `package.json` | **Project Config & Scripts** | Standard Node.js manifest defining project scripts and metadata. |
-| `README.md` | **Documentation & Learning Guide** | Comprehensive explanation of serverless concepts, local testing workflows, and Vercel deployment. |
+| `api/inventory.js` | **Serverless Function Handler** | Handles `/api/inventory` requests, validates input, checks mock catalog, and returns HTTP 200/400/404 responses. |
+| `api/health.js` | **Serverless Function Handler** | Handles `/api/health` requests and returns service health status and timestamp. |
+| `public/index.html` | **Web UI** | Interactive browser frontend demonstrating the API, request viewer, status code badges, and formatted JSON output. |
+| `dev.js` | **Local Runner** | Lightweight local Node.js server simulating Vercel's route handling for local offline testing. |
+| `package.json` | **Project Config** | Defines project scripts (`npm run dev`) and project metadata. |
+| `README.md` | **Documentation** | Architectural guide and documentation for the learning prototype. |

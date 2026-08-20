@@ -9,6 +9,7 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 const inventoryHandler = require('./api/inventory');
+const healthHandler = require('./api/health');
 
 const PORT = 3000;
 
@@ -21,6 +22,12 @@ const server = http.createServer((req, res) => {
     // Populate req.query like Vercel serverless environment does
     req.query = Object.fromEntries(parsedUrl.searchParams.entries());
     return inventoryHandler(req, res);
+  }
+
+  // Route: Serverless Function /api/health
+  if (pathname === '/api/health') {
+    req.query = Object.fromEntries(parsedUrl.searchParams.entries());
+    return healthHandler(req, res);
   }
 
   // Route: Static file serving for testing frontend (public/index.html)
@@ -49,5 +56,6 @@ const server = http.createServer((req, res) => {
 server.listen(PORT, () => {
   console.log(`\n🚀 Northstar Serverless Prototype running locally!`);
   console.log(`📡 Local Server URL : http://localhost:${PORT}`);
-  console.log(`⚡ Test API Endpoint : http://localhost:${PORT}/api/inventory?productId=PROD-101\n`);
+  console.log(`⚡ Inventory Endpoint : http://localhost:${PORT}/api/inventory?productId=PROD-101`);
+  console.log(`💓 Health Check Endpoint : http://localhost:${PORT}/api/health\n`);
 });
