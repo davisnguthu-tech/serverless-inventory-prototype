@@ -11,8 +11,11 @@
  *   and shuts down or pauses automatically.
  */
 
+const redis = require('../lib/redis');
+
+// DEPRECATED - pending removal after Redis verification
 // In-memory mock dataset representing Northstar Retail's stock catalog.
-// In a production application, this would be replaced with a database call (e.g. PostgreSQL, MongoDB, Redis).
+/*
 const MOCK_INVENTORY = {
   "PROD-101": { productName: "Northstar Wireless Ergonomic Mouse", stock: 45 },
   "PROD-102": { productName: "Northstar Mechanical RGB Keyboard", stock: 12 },
@@ -20,6 +23,7 @@ const MOCK_INVENTORY = {
   "PROD-104": { productName: "Northstar Multi-Port Thunderbolt Hub", stock: 89 },
   "PROD-105": { productName: "Northstar Active Noise-Canceling Headset", stock: 5 }
 };
+*/
 
 /**
  * Serverless Request Handler
@@ -27,7 +31,7 @@ const MOCK_INVENTORY = {
  * @param {import('http').IncomingMessage & { query?: Record<string, string> }} req - The incoming HTTP request object.
  * @param {import('http').ServerResponse & { json?: Function, status?: Function }} res - The outgoing HTTP response object.
  */
-module.exports = function handler(req, res) {
+module.exports = async function handler(req, res) {
   // Helper to ensure JSON responses work in both Vercel and standard Node.js environments
   const sendJsonResponse = (statusCode, payload) => {
     if (typeof res.status === 'function' && typeof res.json === 'function') {
@@ -61,24 +65,39 @@ module.exports = function handler(req, res) {
 
   const sanitizedId = productId.trim().toUpperCase();
 
-  // 3. Lookup item in the mock inventory dataset
-  const product = MOCK_INVENTORY[sanitizedId];
-
-  // 4. Validate requirement: HTTP 404 if product does not exist
-  if (!product) {
-    return sendJsonResponse(404, {
-      error: "Not Found",
-      message: `Product with ID '${sanitizedId}' does not exist in inventory.`,
-      availableProductIds: Object.keys(MOCK_INVENTORY)
+  // 3. Lookup item in the Redis cache store
+  let cachedProduct;
+  try {
+    const productKey = `inventory:product:${sanitizedId}`;
+    cachedProduct = await redis.get(productKey);
+  } catch (error) {
+    // 4. Requirement: HTTP 503 if Redis connection fails or is unreachable
+    return sendJsonResponse(503, {
+      error: "Service Unavailable",
+      message: "Redis cache connection failed or is unreachable.",
+      details: error.message
     });
   }
 
-  // 5. Build and return successful response: HTTP 200 with required attributes
+  // 5. Validate requirement: HTTP 404 if product does not exist in Redis cache
+  if (!cachedProduct) {
+    return sendJsonResponse(404, {
+      error: "Not Found",
+      message: `Product with ID '${sanitizedId}' does not exist in inventory cache.`
+    });
+  }
+
+  // Parse cached product record if stringified
+  const productData = typeof cachedProduct === 'string' ? JSON.parse(cachedProduct) : cachedProduct;
+  const stockQty = typeof productData.stock === 'number' ? productData.stock : 0;
+
+  // 6. Build and return successful response: HTTP 200 with required attributes
   const responseData = {
-    productId: sanitizedId,
-    productName: product.productName,
-    stock: product.stock,
-    inStock: product.stock > 0
+    productId: productData.productId || sanitizedId,
+    productName: productData.productName || "Unknown Product",
+    stock: stockQty,
+    inStock: stockQty > 0,
+    cachedAt: productData.updatedAt || null
   };
 
   return sendJsonResponse(200, responseData);
