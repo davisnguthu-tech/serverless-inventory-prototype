@@ -91,8 +91,8 @@
         /* Architecture Section */
         .arch-steps {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1rem;
+            grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+            gap: 0.75rem;
             margin-top: 1rem;
         }
 
@@ -104,7 +104,7 @@
         }
 
         .arch-step-num {
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             font-weight: 700;
             color: var(--accent-blue);
             text-transform: uppercase;
@@ -243,6 +243,7 @@
         .status-200 { background: #14532d; color: var(--accent-green); border: 1px solid #16a34a; }
         .status-400 { background: #713f12; color: var(--accent-yellow); border: 1px solid #ca8a04; }
         .status-404 { background: #7f1d1d; color: var(--accent-red); border: 1px solid #dc2626; }
+        .status-500, .status-502, .status-503 { background: #7f1d1d; color: var(--accent-red); border: 1px solid #dc2626; }
 
         .request-display {
             background: #0f172a;
@@ -310,34 +311,72 @@
         </header>
 
         <main>
-            <!-- How It Works Architecture Section -->
+            <!-- Day 3 Architecture Pipeline Section -->
             <section class="card">
-                <div class="card-title">💡 How It Works</div>
+                <div class="card-title">💡 System Architecture Flow</div>
                 <p style="font-size: 0.95rem; color: var(--text-muted);">
-                    This web interface communicates directly with stateless Node.js serverless functions running on-demand.
+                    Decoupled serverless architecture reading stock catalog from Redis cache populated by periodic sync.
                 </p>
 
                 <div class="arch-steps">
                     <div class="arch-step">
-                        <div class="arch-step-num">Step 1</div>
-                        <div class="arch-step-title">HTTP Request</div>
-                        <div class="arch-step-desc">Client triggers a GET request via fetch() to the serverless route.</div>
+                        <div class="arch-step-num">Layer 1</div>
+                        <div class="arch-step-title">Warehouse API</div>
+                        <div class="arch-step-desc">Single source of truth stock catalog (/api/warehouse/inventory)</div>
                     </div>
                     <div class="arch-step">
-                        <div class="arch-step-num">Step 2</div>
-                        <div class="arch-step-title">Function Execution</div>
-                        <div class="arch-step-desc">Vercel spins up the endpoint handler on demand to process logic.</div>
+                        <div class="arch-step-num">Layer 2</div>
+                        <div class="arch-step-title">Scheduled / Manual Sync</div>
+                        <div class="arch-step-desc">Vercel Cron (5-min schedule) or manual trigger (/api/sync-inventory)</div>
                     </div>
                     <div class="arch-step">
-                        <div class="arch-step-num">Step 3</div>
-                        <div class="arch-step-title">JSON Response</div>
-                        <div class="arch-step-desc">Returns structured JSON payload and HTTP status code before going idle.</div>
+                        <div class="arch-step-num">Layer 3</div>
+                        <div class="arch-step-title">Redis Cache</div>
+                        <div class="arch-step-desc">High-speed key-value cache storing product records & metadata</div>
+                    </div>
+                    <div class="arch-step">
+                        <div class="arch-step-num">Layer 4</div>
+                        <div class="arch-step-title">Inventory Query API</div>
+                        <div class="arch-step-desc">Fast serverless endpoint (/api/inventory) reading directly from Redis</div>
                     </div>
                 </div>
 
                 <div class="endpoint-pill-list">
                     <div class="endpoint-pill"><span class="method">GET</span> /api/inventory?productId={PRODUCT_ID}</div>
+                    <div class="endpoint-pill"><span class="method">GET</span> /api/sync-inventory</div>
+                    <div class="endpoint-pill"><span class="method">GET</span> /api/warehouse/inventory</div>
                     <div class="endpoint-pill"><span class="method">GET</span> /api/health</div>
+                </div>
+            </section>
+
+            <!-- Synchronization Status Card -->
+            <section class="card">
+                <div class="card-title" style="justify-content: space-between; flex-wrap: wrap; gap: 0.5rem;">
+                    <span>🔄 Inventory Synchronization & Cache Status</span>
+                    <button class="btn-primary" style="padding: 0.4rem 1rem; font-size: 0.85rem;" onclick="triggerManualSync()">Run Sync Now</button>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 0.75rem; margin-top: 0.75rem;">
+                    <div style="background: #0f172a; padding: 0.75rem; border-radius: 6px; border: 1px solid var(--border-color);">
+                        <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Warehouse Source</div>
+                        <div style="font-weight: 700; color: var(--accent-blue); font-size: 0.9rem;">Simulated Warehouse API</div>
+                    </div>
+                    <div style="background: #0f172a; padding: 0.75rem; border-radius: 6px; border: 1px solid var(--border-color);">
+                        <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Cache Status</div>
+                        <div id="syncCacheStatus" style="font-weight: 700; color: var(--accent-yellow);">Unsynced / Pending</div>
+                    </div>
+                    <div style="background: #0f172a; padding: 0.75rem; border-radius: 6px; border: 1px solid var(--border-color);">
+                        <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Last Synced At</div>
+                        <div id="syncLastTime" style="font-weight: 600; color: var(--text-main); font-size: 0.85rem;">Not Synced Yet</div>
+                    </div>
+                    <div style="background: #0f172a; padding: 0.75rem; border-radius: 6px; border: 1px solid var(--border-color);">
+                        <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Products Synced</div>
+                        <div id="syncCount" style="font-weight: 700; color: var(--accent-green); font-size: 0.9rem;">0 items</div>
+                    </div>
+                </div>
+
+                <div id="syncMessageBanner" style="margin-top: 0.75rem; font-size: 0.85rem; color: var(--text-muted);">
+                    Click <strong>Run Sync Now</strong> to trigger inventory sync from simulated Warehouse API to Redis cache.
                 </div>
             </section>
 
@@ -411,19 +450,67 @@
                     const isAvailable = data.inStock;
                     productSummaryContainer.innerHTML = `
                         <div class="product-summary ${!isAvailable ? 'out-of-stock' : ''}">
-                            <div class="product-summary-name">${data.productName} (${data.productId})</div>
-                            <div class="product-summary-status">
+                            <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem; flex-wrap: wrap;">
+                                <div class="product-summary-name">${data.productName} (${data.productId})</div>
+                                <span style="font-size: 0.75rem; background: #0284c7; color: #fff; padding: 0.25rem 0.6rem; border-radius: 6px; font-weight: 700;">⚡ Source: Redis Cache</span>
+                            </div>
+                            <div class="product-summary-status" style="margin-top: 0.5rem;">
                                 ${isAvailable 
                                     ? `<span class="in-stock-text">✅ In Stock (${data.stock} units available)</span>` 
                                     : `<span class="out-stock-text">❌ Out of Stock (${data.stock} units)</span>`}
                             </div>
+                            ${data.cachedAt ? `<div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.5rem;">Cached Timestamp: ${data.cachedAt}</div>` : ''}
+                        </div>
+                    `;
+                } else if (response.status === 503 || response.status === 500) {
+                    productSummaryContainer.innerHTML = `
+                        <div style="background: #7f1d1d; border: 1px solid #dc2626; color: var(--accent-red); padding: 1rem; border-radius: 8px; margin-top: 1rem;">
+                            <strong style="display: block; font-size: 1rem; margin-bottom: 0.25rem;">⚠️ Service Unavailable (HTTP ${response.status})</strong>
+                            ${data.message || 'Redis cache connection failed or is unreachable.'}
                         </div>
                     `;
                 }
             } catch (err) {
                 statusBadge.textContent = 'NETWORK ERROR';
-                statusBadge.className = 'status-pill status-404';
+                statusBadge.className = 'status-pill status-503';
                 jsonOutput.textContent = JSON.stringify({ error: err.message }, null, 2);
+                productSummaryContainer.innerHTML = `
+                    <div style="background: #7f1d1d; border: 1px solid #dc2626; color: var(--accent-red); padding: 1rem; border-radius: 8px; margin-top: 1rem;">
+                        <strong style="display: block; font-size: 1rem; margin-bottom: 0.25rem;">⚠️ Network Error</strong>
+                        Failed to reach serverless API endpoint: ${err.message}
+                    </div>
+                `;
+            }
+        }
+
+        async function triggerManualSync() {
+            const syncLastTime = document.getElementById('syncLastTime');
+            const syncCacheStatus = document.getElementById('syncCacheStatus');
+            const syncCount = document.getElementById('syncCount');
+            const syncMessageBanner = document.getElementById('syncMessageBanner');
+
+            syncCacheStatus.textContent = 'Syncing...';
+            syncCacheStatus.style.color = 'var(--accent-yellow)';
+            syncMessageBanner.textContent = 'Triggering /api/sync-inventory...';
+
+            try {
+                const res = await fetch('/api/sync-inventory');
+                const data = await res.json();
+                if (res.ok && data.status === 'SUCCESS') {
+                    syncCacheStatus.textContent = 'Active / Synced';
+                    syncCacheStatus.style.color = 'var(--accent-green)';
+                    syncLastTime.textContent = data.syncedAt;
+                    syncCount.textContent = `${data.productsSynced} items`;
+                    syncMessageBanner.innerHTML = `✅ Successfully synchronized ${data.productsSynced} products from <strong>${data.warehouse}</strong> to Redis cache.`;
+                } else {
+                    syncCacheStatus.textContent = 'Sync Failed';
+                    syncCacheStatus.style.color = 'var(--accent-red)';
+                    syncMessageBanner.textContent = `❌ Sync failed: ${data.message || 'Unknown error'}`;
+                }
+            } catch (err) {
+                syncCacheStatus.textContent = 'Network Error';
+                syncCacheStatus.style.color = 'var(--accent-red)';
+                syncMessageBanner.textContent = `❌ Request failed: ${err.message}`;
             }
         }
 
@@ -432,6 +519,7 @@
                 case 200: return 'OK';
                 case 400: return 'Bad Request';
                 case 404: return 'Not Found';
+                case 503: return 'Service Unavailable';
                 default: return '';
             }
         }
