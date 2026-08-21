@@ -1,3 +1,7 @@
+// NOTE: Vercel Hobby plan limits native cron to once/day (see vercel.json).
+// Real 5-minute sync is triggered externally via [cron-job.org / GitHub Actions]
+// hitting this endpoint directly. The daily cron above is a fallback only.
+
 /**
  * Vercel Serverless Function: Northstar Retail Inventory Synchronization
  * 
