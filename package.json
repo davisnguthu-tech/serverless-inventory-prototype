@@ -17,5 +17,8 @@
     "northstar"
   ],
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "dependencies": {
+    "@upstash/redis": "^1.38.2"
+  }
 }
