@@ -31,6 +31,19 @@ module.exports = async function handler(req, res) {
 
   const syncTimestamp = new Date().toISOString();
 
+  // Verify Vercel Cron authentication if CRON_SECRET environment variable is configured
+  const cronSecret = process.env.CRON_SECRET;
+  if (cronSecret) {
+    const authHeader = req.headers && (req.headers.authorization || req.headers.Authorization);
+    if (authHeader !== `Bearer ${cronSecret}`) {
+      return sendJsonResponse(401, {
+        status: "ERROR",
+        error: "Unauthorized",
+        message: "Invalid or missing Authorization header for scheduled cron invocation."
+      });
+    }
+  }
+
   // Step 1: Query Warehouse Inventory Endpoint
   let warehouseData;
   const host = req.headers && req.headers.host ? req.headers.host : 'localhost:3000';
