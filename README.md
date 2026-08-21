@@ -58,6 +58,12 @@ A **Serverless Function** (often called *Function-as-a-Service* or *FaaS*) is an
 - **`api/inventory.js` & `api/health.js`**: These are the actual **Vercel Serverless Functions**. When deployed to Vercel, Vercel automatically exposes files inside the `/api` directory as individual serverless endpoints (`/api/inventory` and `/api/health`).
 - **`dev.js`**: This file is **only a local development/testing helper script**. It uses Node.js's native `http` module to serve `public/index.html` and route `/api/*` calls locally during development so you do not need to install global CLI tools.
 
+### Scheduling
+
+- Cron configured in `vercel.json` as `*/5 * * * *` (every 5 minutes) to poll Warehouse API and sync to Redis cache.
+- Note on Vercel Hobby: Hobby plan enforces minimum interval of once per day/hour (max 2 cron jobs). On Pro, this runs every 5 minutes automatically. For Hobby/demo, sync can be triggered manually via `POST /api/sync-inventory` or the "Run Sync Now" button in the dashboard.
+- The sync logic is idempotent and safe for frequent polling.
+
 ---
 
 ## 🛠️ 3. How to Run It Locally
